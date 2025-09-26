@@ -1,0 +1,40 @@
+# LAPDOG Colab Requirements - Lightweight version for Google Colab
+# Compatible with Python 3.8-3.10 and CUDA 11.8 (Colab default)
+
+# Core ML libraries
+torch>=1.13.0
+transformers>=4.30.0
+tokenizers>=0.13.0
+accelerate>=0.20.0
+
+# Gemma 3 model support
+bitsandbytes>=0.41.0  # For quantization
+peft>=0.4.0  # Parameter-efficient fine-tuning
+
+# Efficient indexing and retrieval (lighter alternatives)
+faiss-cpu>=1.7.4  # CPU version for Colab compatibility
+sentence-transformers>=2.2.0
+
+# Data processing
+datasets>=2.12.0
+jsonlines>=3.1.0
+numpy>=1.24.0
+pandas>=1.5.0
+
+# Evaluation metrics
+rouge>=1.0.1
+sacrebleu>=2.3.1
+evaluate>=0.4.0
+
+# Utilities
+tqdm>=4.65.0
+wandb>=0.15.0  # For experiment tracking
+matplotlib>=3.6.0
+seaborn>=0.12.0
+
+# Memory optimization
+psutil>=5.9.0
+gputil>=1.4.0
+
+# Colab-specific utilities
+google-colab  # Only install in Colab environment
