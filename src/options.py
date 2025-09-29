@@ -210,7 +210,7 @@ class Options:
             "--reader_causallm",
             type=str,
             default=None,
-            help='set reader to causal LM, instead of seq2seq',
+            help='set reader to causal LM, instead of seq2seq (e.g., "gemma" for smallest Gemma model, or any HuggingFace model name)',
         )
 
     def add_modeling_options(self):

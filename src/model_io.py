@@ -82,17 +82,31 @@ def _convert_state_dict_from_dual_encoder_retriever(state_dict):
 def load_reader(opt):
     reader = None
     if opt.reader_causallm is not None:
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        model = AutoModelForCausalLM.from_pretrained(opt.reader_causallm)
-        tokenizer = AutoTokenizer.from_pretrained(opt.reader_causallm)
-        # tokenizer.add_special_tokens({'bos_token': 'R:'})
-        if tokenizer.pad_token is None:
-            len_before = len(tokenizer)
-            tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-            len_after = len(tokenizer)
-            if len_after > len_before:
-                model.resize_token_embeddings(len_after)
-        return model, tokenizer
+        # Add support for Gemma model (smallest version)
+        if opt.reader_causallm.lower() == "gemma":
+            from transformers import AutoTokenizer, AutoModelForCausalLM
+            # Use the smallest Gemma model from HuggingFace
+            gemma_model_name = "google/gemma-2b-it"  # Replace with actual smallest Gemma if available
+            model = AutoModelForCausalLM.from_pretrained(gemma_model_name)
+            tokenizer = AutoTokenizer.from_pretrained(gemma_model_name)
+            if tokenizer.pad_token is None:
+                len_before = len(tokenizer)
+                tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+                len_after = len(tokenizer)
+                if len_after > len_before:
+                    model.resize_token_embeddings(len_after)
+            return model, tokenizer
+        else:
+            from transformers import AutoTokenizer, AutoModelForCausalLM
+            model = AutoModelForCausalLM.from_pretrained(opt.reader_causallm)
+            tokenizer = AutoTokenizer.from_pretrained(opt.reader_causallm)
+            if tokenizer.pad_token is None:
+                len_before = len(tokenizer)
+                tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+                len_after = len(tokenizer)
+                if len_after > len_before:
+                    model.resize_token_embeddings(len_after)
+            return model, tokenizer
 
     if not opt.retrieve_only:
         reader = src.fid.FiD.from_pretrained(opt.reader_model_type)

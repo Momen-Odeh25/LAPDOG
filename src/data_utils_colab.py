@@ -32,36 +32,53 @@ class ColabDataDownloader:
         os.makedirs(self.data_dir, exist_ok=True)
     
     def download_convai2_data(self):
-        """Download ConvAI2 dataset for Colab."""
-        convai2_dir = os.path.join(self.data_dir, 'convai2')
-        os.makedirs(convai2_dir, exist_ok=True)
+        """Setup ConvAI2 dataset for Colab (use local data if available)."""
+        # First check if data exists locally (in workspace)
+        local_data_dir = os.path.join(os.getcwd(), 'data', 'convai2')
+        colab_data_dir = os.path.join(self.data_dir, 'convai2')
+        os.makedirs(colab_data_dir, exist_ok=True)
         
-        # URLs for ConvAI2 data (these would be actual URLs)
-        urls = {
-            'train.jsonl': 'https://example.com/convai2/train.jsonl',  # Replace with actual URL
-            'valid.jsonl': 'https://example.com/convai2/valid.jsonl',  # Replace with actual URL
-        }
+        files_to_check = ['train.jsonl', 'valid.jsonl']
         
-        for filename, url in urls.items():
-            filepath = os.path.join(convai2_dir, filename)
-            if not os.path.exists(filepath):
-                logger.info(f"Downloading {filename}...")
+        for filename in files_to_check:
+            local_filepath = os.path.join(local_data_dir, filename)
+            colab_filepath = os.path.join(colab_data_dir, filename)
+            
+            if os.path.exists(local_filepath):
+                logger.info(f"Found local {filename}, copying to data directory...")
                 try:
-                    self._download_file(url, filepath)
+                    import shutil
+                    shutil.copy2(local_filepath, colab_filepath)
+                    logger.info(f"Successfully copied {filename}")
                 except Exception as e:
-                    logger.error(f"Failed to download {filename}: {e}")
-                    # Create sample data for demonstration
-                    self._create_sample_data(filepath, filename)
+                    logger.error(f"Failed to copy {filename}: {e}")
+            elif not os.path.exists(colab_filepath):
+                logger.warning(f"{filename} not found locally or in data directory")
+                # Create a minimal sample file for testing
+                self._create_sample_data(colab_filepath, filename)
     
     def download_story_corpus(self):
-        """Download story corpus data."""
-        story_dir = os.path.join(self.data_dir, 'corpora', 'story')
-        os.makedirs(story_dir, exist_ok=True)
+        """Setup story corpus data (use local data if available)."""
+        # Check for local story data first
+        local_story_dir = os.path.join(os.getcwd(), 'data', 'corpora', 'story')
+        colab_story_dir = os.path.join(self.data_dir, 'corpora', 'story')
+        os.makedirs(colab_story_dir, exist_ok=True)
         
-        story_file = os.path.join(story_dir, 'story.jsonl')
-        if not os.path.exists(story_file):
+        local_story_file = os.path.join(local_story_dir, 'story.jsonl')
+        colab_story_file = os.path.join(colab_story_dir, 'story.jsonl')
+        
+        if os.path.exists(local_story_file):
+            logger.info("Found local story corpus, copying...")
+            try:
+                import shutil
+                shutil.copy2(local_story_file, colab_story_file)
+                logger.info("Successfully copied story corpus")
+            except Exception as e:
+                logger.error(f"Failed to copy story corpus: {e}")
+                self._create_sample_story_data(colab_story_file)
+        elif not os.path.exists(colab_story_file):
             logger.info("Creating sample story corpus...")
-            self._create_sample_story_data(story_file)
+            self._create_sample_story_data(colab_story_file)
     
     def _download_file(self, url: str, filepath: str):
         """Download file from URL with progress bar."""
@@ -276,13 +293,24 @@ class ColabDataLoader:
 
 
 def setup_colab_data():
-    """Setup data for Colab environment."""
-    logger.info("Setting up data for Colab...")
+    """Setup data for Colab environment (or use local data if available)."""
+    logger.info("Setting up data...")
     
-    # Initialize downloader
-    downloader = ColabDataDownloader()
+    # Check if we're in Colab or local environment
+    in_colab = os.path.exists('/content') and not os.path.exists('C:\\')
     
-    # Download datasets
+    if in_colab:
+        # In Colab: use the original data directory
+        data_dir = ColabConfig.DATA_DIR
+    else:
+        # Local: use the existing data directory
+        data_dir = os.path.join(os.getcwd(), 'data')
+        logger.info(f"Running locally, using data directory: {data_dir}")
+    
+    # Initialize downloader with the appropriate directory
+    downloader = ColabDataDownloader(data_dir)
+    
+    # Setup datasets
     downloader.download_convai2_data()
     downloader.download_story_corpus()
     
@@ -291,7 +319,12 @@ def setup_colab_data():
 
 def get_colab_data_loaders(tokenizer, batch_size: int = 1):
     """Get data loaders optimized for Colab."""
-    data_dir = ColabConfig.DATA_DIR
+    # Determine data directory based on environment
+    in_colab = os.path.exists('/content') and not os.path.exists('C:\\')
+    if in_colab:
+        data_dir = ColabConfig.DATA_DIR
+    else:
+        data_dir = os.path.join(os.getcwd(), 'data')
     
     # Training data loader
     train_path = os.path.join(data_dir, 'convai2', 'train.jsonl')
@@ -316,7 +349,14 @@ def get_colab_data_loaders(tokenizer, batch_size: int = 1):
 
 def load_story_corpus(max_stories: int = 500):
     """Load story corpus for retrieval."""
-    story_path = os.path.join(ColabConfig.DATA_DIR, 'corpora', 'story', 'story.jsonl')
+    # Determine data directory based on environment
+    in_colab = os.path.exists('/content') and not os.path.exists('C:\\')
+    if in_colab:
+        data_dir = ColabConfig.DATA_DIR
+    else:
+        data_dir = os.path.join(os.getcwd(), 'data')
+    
+    story_path = os.path.join(data_dir, 'corpora', 'story', 'story.jsonl')
     
     stories = []
     with open(story_path, 'r', encoding='utf-8') as f:
